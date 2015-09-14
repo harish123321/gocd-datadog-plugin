@@ -1,11 +1,13 @@
-package com.pagerduty.go.notification.base;
+package com.pagerduty.go.notification.datadog;
 
 
 import com.google.gson.annotations.SerializedName;
 import com.thoughtworks.go.plugin.api.logging.Logger;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class GoNotificationMessage {
     private Logger LOGGER = Logger.getLoggerFor(GoNotificationMessage.class);
@@ -71,7 +73,6 @@ public class GoNotificationMessage {
         return pipeline.name + "/" + pipeline.counter + "/" + pipeline.stage.name + "/" + pipeline.stage.counter;
     }
 
-
     public String getPipelineName() {
         return pipeline.name;
     }
@@ -96,12 +97,12 @@ public class GoNotificationMessage {
         return pipeline.stage.result;
     }
 
-    public String getCreateTime() {
-        return pipeline.stage.createTime;
+    public Date getStageCreateTime() {
+        return parseISO8601(pipeline.stage.createTime);
     }
 
-    public String getLastTransitionTime() {
-        return pipeline.stage.lastTransitionTime;
+    public Date getStageLastTransitionTime() {
+        return parseISO8601(pipeline.stage.lastTransitionTime);
     }
 
     public List<String> getJobNames() {
@@ -112,14 +113,14 @@ public class GoNotificationMessage {
         return jobNames;
     }
 
-    public String getJobScheduleTime(String jobName) {
+    public Date getJobScheduleTime(String jobName) {
         Job job = getJob(jobName);
-        return job.scheduleTime;
+        return parseISO8601(job.scheduleTime);
     }
 
-    public String getJobCompleteTime(String jobName) {
+    public Date getJobCompleteTime(String jobName) {
         Job job = getJob(jobName);
-        return job.completeTime;
+        return parseISO8601(job.completeTime);
     }
 
     public String getJobState(String jobName) {
@@ -141,5 +142,13 @@ public class GoNotificationMessage {
         return null;
     }
 
-
+    private Date parseISO8601(String date) {
+        DateFormat format = new SimpleDateFormat("yyyy-mm-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+        format.setTimeZone(TimeZone.getTimeZone("UTC"));
+        try {
+            return format.parse(date);
+        } catch (ParseException e) {
+            return null;
+        }
+    }
 }
