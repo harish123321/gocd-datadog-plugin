@@ -65,9 +65,7 @@ public class GoNotificationPlugin implements GoPlugin {
             LOGGER.warn(String.format("The configuration file %s was not found, using defaults. The configuration file should be set up.", configFile));
             config = defaultConfig;
         } else {
-            LOGGER.debug("Loading Config File");
             config = ConfigFactory.parseFile(configFile).withFallback(defaultConfig);
-            LOGGER.debug(config.toString());
         }
 
         statesForHistograms = config.getStringList("datadog.create_histograms_for_states");
@@ -122,8 +120,6 @@ public class GoNotificationPlugin implements GoPlugin {
         try {
             response.put("status", "success");
             GoNotificationMessage message = new GsonBuilder().registerTypeAdapter(Date.class, new Iso8601DateAdapter()).create().fromJson(goPluginApiRequest.requestBody(), GoNotificationMessage.class);
-
-            LOGGER.debug("Stage " + message.getStageState());
 
             // Log duration of stage for certain states
             if (statesForHistograms.contains(message.getStageState())) {
