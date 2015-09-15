@@ -17,7 +17,6 @@ import com.typesafe.config.ConfigFactory;
 
 import java.io.File;
 import java.net.InetAddress;
-import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.*;
 
@@ -34,47 +33,52 @@ public class GoNotificationPlugin implements GoPlugin {
     private static List<String> statesForEvents;
 
     public GoNotificationPlugin() {
-        // Get default configuration (resources/reference.conf)
-//        Config defaultConfig = null;
-//        Config config = null;
+        Config defaultConfig = null;
+        Config config = null;
 
-//        try {
-//            File defaultConfigFile = new File(getClass().getResource("reference.conf").toURI());
-//            defaultConfig = ConfigFactory.parseFile(defaultConfigFile);
-//        } catch (URISyntaxException e) {
-//            LOGGER.debug(e.getMessage());
-//            e.printStackTrace();
-//        }
+        // This is in here because it wasn't loading from the file included in the jar for some reason
+        String defaultConfigHOCON = "datadog {\n" +
+                "  # Prefix that will be prepended to all metric and event names\n" +
+                "  prefix = gocd\n" +
+                "  # Tags that will be added to all metrics and events eg [gocd, production]\n" +
+                "  tags = []\n" +
+                "  # Create build duration histogram for the following stage states (May be any of Passed, Failed, Cancelled)\n" +
+                "  create_histograms_for_states = [Passed, Failed]\n" +
+                "  # Build duration histogram metric name\n" +
+                "  histogram_metric = build.duration\n" +
+                "  # Create events for stage state (May be any of Passed, Failed, Cancelled)\n" +
+                "  create_events_for_states = [Passed, Failed, Cancelled]\n" +
+                "}\n" +
+                "\n" +
+                "statsd {\n" +
+                "  # Datadog agent / statsd host\n" +
+                "  host = localhost\n" +
+                "  # Datadog agent / statsd port\n" +
+                "  port = 8125\n" +
+                "}";
 
+        defaultConfig = ConfigFactory.parseString(defaultConfigHOCON);
 
-//        String userHome = System.getProperty("user.home");
-//        File configFile = new File(userHome + File.separator + CONF_FILENAME);
-//        if (!configFile.exists()) {
-//            LOGGER.warn(String.format("The configuration file %s was not found in %s, using defaults. The configuration file should be set up.", CONF_FILENAME, configFile));
-////            config = defaultConfig;
-//        } else {
-//            config = ConfigFactory.parseFile(configFile);
-//        }
+        String userHome = System.getProperty("user.home");
+        File configFile = new File(userHome + File.separator + CONF_FILENAME);
+        if (!configFile.exists()) {
+            LOGGER.warn(String.format("The configuration file %s was not found, using defaults. The configuration file should be set up.", configFile));
+            config = defaultConfig;
+        } else {
+            LOGGER.debug("Loading Config File");
+            config = ConfigFactory.parseFile(configFile).withFallback(defaultConfig);
+            LOGGER.debug(config.toString());
+        }
 
-//        statesForHistograms = config.getStringList("datadog.create_histograms_for_states");
-//        histogramMetric = config.getString("datadog.histogram_metric");
-//        statesForEvents = config.getStringList("datadog.create_events_for_states");
-//
-//        String prefix = config.getString("datadog.prefix");
-//        List<String> tagList = config.getStringList("datadog.tags");
-//        String[] tags = tagList.toArray(new String[tagList.size()]);
-//        String statsdHost = config.getString("statsd.host");
-//        int statsdPort = config.getInt("statsd.port");
+        statesForHistograms = config.getStringList("datadog.create_histograms_for_states");
+        histogramMetric = config.getString("datadog.histogram_metric");
+        statesForEvents = config.getStringList("datadog.create_events_for_states");
 
-        statesForHistograms = new ArrayList<>(Arrays.asList("Passed", "Failed"));
-        histogramMetric = "build.duration";
-        statesForEvents = new ArrayList<>(Arrays.asList("Passed", "Failed"));
-
-        String prefix = "gocd";
-        List<String> tagList = new ArrayList<>(Arrays.asList(""));
+        String prefix = config.getString("datadog.prefix");
+        List<String> tagList = config.getStringList("datadog.tags");
         String[] tags = tagList.toArray(new String[tagList.size()]);
-        String statsdHost = "localhost";
-        int statsdPort = 8125;
+        String statsdHost = config.getString("statsd.host");
+        int statsdPort = config.getInt("statsd.port");
 
         statsd = new NonBlockingStatsDClient(
                 prefix,
@@ -115,7 +119,6 @@ public class GoNotificationPlugin implements GoPlugin {
 
         List<String> messages = new ArrayList<>();
 
-
         try {
             response.put("status", "success");
             GoNotificationMessage message = new GsonBuilder().registerTypeAdapter(Date.class, new Iso8601DateAdapter()).create().fromJson(goPluginApiRequest.requestBody(), GoNotificationMessage.class);
@@ -128,12 +131,10 @@ public class GoNotificationPlugin implements GoPlugin {
                 statsd.recordHistogramValue(histogramMetric, duration, message.getPipelineName(), message.getStageName(), message.getStageResult());
             }
 
-            // Log events and counters for certain stage states
+            // Log events for certain stage states
             if (statesForEvents.contains(message.getStageState())) {
                 duration = message.getStageLastTransitionTime().getTime() - message.getStageCreateTime().getTime();
 
-
-                // Send an alert
                 Event.AlertType alertType = Event.AlertType.ERROR;
                 switch (message.getStageState()) {
                     case "Passed":
