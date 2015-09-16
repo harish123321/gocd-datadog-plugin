@@ -36,28 +36,7 @@ public class GoNotificationPlugin implements GoPlugin {
         Config defaultConfig = null;
         Config config = null;
 
-        // This is in here because it wasn't loading from the file included in the jar for some reason
-        String defaultConfigHOCON = "datadog {\n" +
-                "  # Prefix that will be prepended to all metric and event names\n" +
-                "  prefix = gocd\n" +
-                "  # Tags that will be added to all metrics and events eg [gocd, production]\n" +
-                "  tags = []\n" +
-                "  # Create build duration histogram for the following stage states (May be any of Passed, Failed, Cancelled)\n" +
-                "  create_histograms_for_states = [Passed, Failed]\n" +
-                "  # Build duration histogram metric name\n" +
-                "  histogram_metric = build.duration\n" +
-                "  # Create events for stage state (May be any of Passed, Failed, Cancelled)\n" +
-                "  create_events_for_states = [Passed, Failed, Cancelled]\n" +
-                "}\n" +
-                "\n" +
-                "statsd {\n" +
-                "  # Datadog agent / statsd host\n" +
-                "  host = localhost\n" +
-                "  # Datadog agent / statsd port\n" +
-                "  port = 8125\n" +
-                "}";
-
-        defaultConfig = ConfigFactory.parseString(defaultConfigHOCON);
+        defaultConfig = ConfigFactory.load(getClass().getClassLoader());
 
         String userHome = System.getProperty("user.home");
         File configFile = new File(userHome + File.separator + CONF_FILENAME);
