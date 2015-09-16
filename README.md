@@ -1,5 +1,9 @@
 # GoCD DataDog Notifier Plugin #
 
+[![Apache 2.0 License](https://img.shields.io/badge/license-Apache%202.0-brightgreen.svg)](https://tldrlegal.com/license/apache-license-2.0-(apache-2.0))
+
+Copyright 2014 PagerDuty, Inc.
+
 The GoCD DataDog Notifier Plugin will send stage run duration statistics and stage run events to DataDog. 
 
 ## Requirements ##
@@ -37,6 +41,8 @@ Example file contents:
     }
 
 ## License ##
+
+http://www.apache.org/licenses/LICENSE-2.0
 
 This plugin was based on the GoCD Slack Notification Plugin
 https://github.com/ashwanthkumar/gocd-slack-build-notifier
