@@ -6,7 +6,7 @@
 
     <groupId>com.pagerduty.go.notification</groupId>
     <artifactId>datadog-notifier</artifactId>
-    <version>1.0</version>
+    <version>0.1</version>
     <packaging>jar</packaging>
 
     <properties>
