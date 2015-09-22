@@ -103,7 +103,7 @@ public class GoNotificationPlugin implements GoPlugin {
             // Log duration of stage for certain states
             if (statesForHistograms.contains(message.getStageState())) {
                 duration = message.getStageLastTransitionTime().getTime() - message.getStageCreateTime().getTime();
-                statsd.recordHistogramValue(histogramMetric, duration, message.getPipelineName(), message.getStageName(), message.getStageResult());
+                statsd.recordHistogramValue(histogramMetric, duration, "pipeline:" + message.getPipelineName(), "stage:" + message.getStageName(), "result:" + message.getStageResult());
             }
 
             // Log events for certain stage states
